@@ -16,6 +16,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
@@ -324,6 +325,11 @@ func quoteIssueComment(comment string) string {
 // JIRA code blocks to inline code, numbered lists to Markdown lists, colored text to plain text, and JIRA links to Markdown links.
 // For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
 func preProcessText(jiraMarkdownString string) string {
+	if os.Getenv("MM_PLUGIN_JIRA_CONVERT_HTML_TO_MARKDOWN") != "" {
+		converter := md.NewConverter("", true, nil)
+		jiraMarkdownString, _ = converter.ConvertString(jiraMarkdownString)
+	}
+
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
 	hyphenRegex := regexp.MustCompile(`-(\w+)-`)
 	headingRegex := regexp.MustCompile(`(?m)^(h[1-6]\.)\s+`)
