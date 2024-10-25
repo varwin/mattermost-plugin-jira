@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
+	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/pkg/errors"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
@@ -306,10 +306,11 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		return
 	}
 
+	text := quoteIssueComment(preProcessText(jwh.Comment.Body))
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), jwh.Comment.Body),
+		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), text),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
 	})
@@ -325,9 +326,13 @@ func quoteIssueComment(comment string) string {
 // JIRA code blocks to inline code, numbered lists to Markdown lists, colored text to plain text, and JIRA links to Markdown links.
 // For more reference, please visit https://github.com/mattermost/mattermost-plugin-jira/issues/1096
 func preProcessText(jiraMarkdownString string) string {
-	if os.Getenv("MM_PLUGIN_JIRA_CONVERT_HTML_TO_MARKDOWN") != "" {
-		converter := md.NewConverter("", true, nil)
-		jiraMarkdownString, _ = converter.ConvertString(jiraMarkdownString)
+	converter := md.NewConverter("", true, nil)
+	mdString, err := converter.ConvertString(jiraMarkdownString)
+
+	if err != nil {
+		fmt.Printf("html to md error: %v", err)
+	} else {
+		jiraMarkdownString = mdString
 	}
 
 	asteriskRegex := regexp.MustCompile(`\*(\w+)\*`)
