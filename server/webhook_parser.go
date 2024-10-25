@@ -262,7 +262,7 @@ func appendCommentNotifications(wh *webhook, verb string) {
 	commentAuthor := mdUser(&jwh.Comment.UpdateAuthor)
 
 	message := fmt.Sprintf("%s %s %s:\n%s",
-		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(jwh.Comment.Body))
+		commentAuthor, verb, jwh.mdKeySummaryLink(), quoteIssueComment(preProcessText(jwh.Comment.Body)))
 	assigneeMentioned := false
 
 	for _, u := range parseJIRAUsernamesFromText(wh.Comment.Body) {
@@ -306,11 +306,10 @@ func appendCommentNotifications(wh *webhook, verb string) {
 		return
 	}
 
-	text := quoteIssueComment(preProcessText(jwh.Comment.Body))
 	wh.notifications = append(wh.notifications, webhookUserNotification{
 		jiraUsername:  jwh.Issue.Fields.Assignee.Name,
 		jiraAccountID: jwh.Issue.Fields.Assignee.AccountID,
-		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), text),
+		message:       fmt.Sprintf("%s **commented** on %s:\n>%s", commentAuthor, jwh.mdKeySummaryLink(), preProcessText(jwh.Comment.Body)),
 		postType:      PostTypeComment,
 		commentSelf:   jwh.Comment.Self,
 	})
